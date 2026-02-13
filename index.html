@@ -5,7 +5,7 @@
   <!-- Makes it mobile-friendly — scales to phone screen width -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <!-- PWA stuff — theme color for browser chrome, manifest for install -->
-  <meta name="theme-color" content="#1a1a2e">
+  <meta name="theme-color" content="#0a0a1a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="eBay Lister">
@@ -14,8 +14,25 @@
 
   <style>
     /* ========================================
-       BASE STYLES — Dark theme, mobile-first
-       Matches Field Buddy design language
+       CSS CUSTOM PROPERTIES — easy theming
+       ======================================== */
+    :root {
+      --bg-deep: #0a0a1a;
+      --bg-card: rgba(22, 33, 62, 0.6);
+      --bg-input: rgba(15, 52, 96, 0.5);
+      --border: rgba(15, 52, 96, 0.8);
+      --border-focus: #00d4aa;
+      --accent: #00d4aa;
+      --accent-glow: rgba(0, 212, 170, 0.3);
+      --accent-secondary: #7b61ff;
+      --danger: #e94560;
+      --text: #e0e0e0;
+      --text-dim: #6a6a8a;
+      --glass-blur: 12px;
+    }
+
+    /* ========================================
+       BASE STYLES — Deep dark theme, mobile-first
        ======================================== */
     * {
       margin: 0;
@@ -25,46 +42,117 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
+      background: var(--bg-deep);
+      color: var(--text);
       min-height: 100vh;
       overscroll-behavior: none;
-      padding-bottom: 70px; /* space for bottom tab bar */
+      padding-bottom: 80px; /* space for bottom tab bar */
+      /* Subtle dot grid background */
+      background-image: radial-gradient(rgba(0, 212, 170, 0.03) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Max-width wrapper so it doesn't stretch on desktop */
+    .app-container {
+      max-width: 480px;
+      margin: 0 auto;
     }
 
     /* ========================================
-       HEADER
+       HEADER — animated gradient shimmer
        ======================================== */
     .header {
-      background: #16213e;
-      padding: 16px 20px;
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a0a2e 50%, #0d1b3e 100%);
+      padding: 18px 20px;
       text-align: center;
-      border-bottom: 2px solid #0f3460;
+      border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 100;
+      overflow: hidden;
+    }
+
+    /* Shimmering gradient line under header */
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent-secondary), var(--accent), transparent);
+      background-size: 200% 100%;
+      animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
     }
 
     .header h1 {
-      font-size: 20px;
-      color: #00d4aa;
-      letter-spacing: 1px;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      /* Gradient text */
+      background: linear-gradient(135deg, #00d4aa 0%, #7b61ff 50%, #00d4aa 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientText 4s linear infinite;
+    }
+
+    @keyframes gradientText {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }
+
+    .header .subtitle {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-top: 2px;
     }
 
     /* ========================================
-       BOTTOM TAB BAR — New Listing / Drafts / Settings
-       Fixed at bottom for easy thumb access
+       SESSION STREAK — motivational counter
+       ======================================== */
+    .streak-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(0, 212, 170, 0.05);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .streak-bar .count {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .streak-bar.hidden { display: none; }
+
+    /* ========================================
+       BOTTOM TAB BAR — frosted glass
        ======================================== */
     .tab-bar {
       display: flex;
-      background: #16213e;
-      border-top: 2px solid #0f3460;
+      background: rgba(10, 10, 26, 0.85);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
       z-index: 100;
-      /* Safe area for iPhone notch/home indicator */
       padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
@@ -73,20 +161,40 @@
       padding: 10px 8px 8px;
       background: none;
       border: none;
-      color: #8a8a9a;
-      font-size: 11px;
+      color: var(--text-dim);
+      font-size: 10px;
       font-weight: 600;
+      letter-spacing: 0.5px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 4px;
-      transition: color 0.2s;
+      transition: color 0.3s, transform 0.2s;
       position: relative;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .tab-btn.active {
-      color: #00d4aa;
+      color: var(--accent);
+    }
+
+    /* Active tab indicator dot */
+    .tab-btn.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    .tab-btn:active {
+      transform: scale(0.92);
     }
 
     .tab-btn svg {
@@ -95,14 +203,14 @@
       fill: currentColor;
     }
 
-    /* Draft count badge — shows number of saved drafts */
+    /* Draft count badge */
     .draft-badge {
       position: absolute;
-      top: 4px;
-      right: calc(50% - 20px);
-      background: #e94560;
+      top: 2px;
+      right: calc(50% - 22px);
+      background: linear-gradient(135deg, #e94560, #ff6b81);
       color: white;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       min-width: 16px;
       height: 16px;
@@ -111,51 +219,76 @@
       align-items: center;
       justify-content: center;
       padding: 0 4px;
+      box-shadow: 0 2px 8px rgba(233, 69, 96, 0.4);
     }
 
     .draft-badge.hidden { display: none; }
 
     /* ========================================
-       TAB CONTENT — Only one visible at a time
+       TAB CONTENT — fade transitions
        ======================================== */
     .tab-content {
       display: none;
       padding: 16px;
+      animation: fadeIn 0.25s ease-out;
     }
 
     .tab-content.active {
       display: block;
     }
 
-    /* ========================================
-       SHARED UI COMPONENTS
-       ======================================== */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-    /* Cards — container for form sections */
+    /* ========================================
+       GLASSMORPHISM CARDS
+       ======================================== */
     .card {
-      background: #16213e;
-      border-radius: 12px;
+      background: var(--bg-card);
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      backdrop-filter: blur(var(--glass-blur));
+      border-radius: 16px;
       padding: 16px;
       margin-bottom: 16px;
-      border: 1px solid #0f3460;
+      border: 1px solid var(--border);
+      /* Subtle inner glow */
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
     }
 
     .card h2 {
-      font-size: 14px;
-      color: #00d4aa;
+      font-size: 11px;
+      color: var(--accent);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    /* Form inputs */
+    /* Small decorative dot before section headers */
+    .card h2::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+
+    /* ========================================
+       FORM INPUTS — subtle glow on focus
+       ======================================== */
     label {
       display: block;
-      font-size: 12px;
-      color: #8a8a9a;
-      margin-bottom: 4px;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      font-weight: 600;
     }
 
     input[type="text"],
@@ -163,20 +296,22 @@
     textarea,
     select {
       width: 100%;
-      padding: 12px;
-      background: #0f3460;
-      border: 1px solid #1a4a8a;
-      border-radius: 8px;
-      color: #e0e0e0;
-      font-size: 16px; /* 16px prevents iOS zoom on focus */
+      padding: 12px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 16px; /* 16px prevents iOS zoom */
       font-family: inherit;
       margin-bottom: 12px;
       -webkit-appearance: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
 
     input:focus, textarea:focus, select:focus {
       outline: none;
-      border-color: #00d4aa;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
     textarea {
@@ -184,7 +319,9 @@
       resize: vertical;
     }
 
-    /* Buttons */
+    /* ========================================
+       BUTTONS
+       ======================================== */
     .btn {
       display: flex;
       align-items: center;
@@ -193,49 +330,98 @@
       width: 100%;
       padding: 14px;
       border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 600;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
       cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
+      transition: transform 0.15s, box-shadow 0.3s;
       -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
     }
 
     .btn:active {
-      transform: scale(0.97);
+      transform: scale(0.96);
     }
 
     .btn:disabled {
-      opacity: 0.5;
+      opacity: 0.35;
       cursor: not-allowed;
       transform: none;
     }
 
+    /* Primary button — gradient with glow */
     .btn-primary {
-      background: #00d4aa;
-      color: #1a1a2e;
+      background: linear-gradient(135deg, #00d4aa, #00b894);
+      color: #0a0a1a;
+      box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      box-shadow: 0 2px 10px rgba(0, 212, 170, 0.4);
     }
 
     .btn-secondary {
-      background: #0f3460;
-      color: #e0e0e0;
-      border: 1px solid #1a4a8a;
+      background: var(--bg-input);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
     .btn-danger {
-      background: #e94560;
+      background: linear-gradient(135deg, #e94560, #c0392b);
       color: white;
+      box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
     }
 
     .btn-copy {
-      background: #2196F3;
+      background: linear-gradient(135deg, #7b61ff, #5a3fd6);
       color: white;
+      box-shadow: 0 4px 15px rgba(123, 97, 255, 0.3);
     }
 
     .btn-small {
-      padding: 8px 14px;
+      padding: 8px 16px;
       font-size: 13px;
       width: auto;
+      border-radius: 8px;
+    }
+
+    /* ========================================
+       GENERATE BUTTON — special animated border
+       ======================================== */
+    .generate-wrapper {
+      position: relative;
+      border-radius: 14px;
+      padding: 2px;
+      /* Animated gradient border */
+      background: linear-gradient(135deg, #00d4aa, #7b61ff, #e94560, #00d4aa);
+      background-size: 300% 300%;
+      animation: borderGradient 4s ease infinite;
+    }
+
+    .generate-wrapper.disabled {
+      opacity: 0.35;
+      animation: none;
+      background: var(--border);
+    }
+
+    @keyframes borderGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    #generateBtn {
+      border-radius: 12px;
+      background: var(--bg-deep);
+      color: var(--text);
+      box-shadow: none;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    #generateBtn:disabled {
+      opacity: 1; /* wrapper handles opacity */
     }
 
     /* ========================================
@@ -250,20 +436,28 @@
 
     .photo-slot {
       aspect-ratio: 1;
-      background: #0f3460;
-      border: 2px dashed #1a4a8a;
-      border-radius: 10px;
+      background: rgba(15, 52, 96, 0.3);
+      border: 2px dashed rgba(0, 212, 170, 0.15);
+      border-radius: 14px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 6px;
       cursor: pointer;
       position: relative;
       overflow: hidden;
+      transition: border-color 0.3s, background 0.3s;
+    }
+
+    .photo-slot:active {
+      background: rgba(0, 212, 170, 0.05);
     }
 
     .photo-slot.has-photo {
       border-style: solid;
-      border-color: #00d4aa;
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
     }
 
     .photo-slot img {
@@ -272,25 +466,64 @@
       object-fit: cover;
     }
 
-    .photo-slot .add-icon {
-      color: #1a4a8a;
-      font-size: 36px;
-      font-weight: 300;
+    /* Camera icon for empty slots */
+    .photo-slot .slot-icon {
+      width: 32px;
+      height: 32px;
+      fill: rgba(0, 212, 170, 0.25);
+      animation: subtlePulse 2.5s ease-in-out infinite;
     }
 
-    /* Remove photo button — X in top-right corner */
+    .photo-slot .slot-label {
+      font-size: 10px;
+      color: rgba(0, 212, 170, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Remove photo button */
     .photo-remove {
       position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 24px;
-      height: 24px;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
       background: rgba(233, 69, 96, 0.9);
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       color: white;
-      font-size: 14px;
+      font-size: 16px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transition: transform 0.15s;
+    }
+
+    .photo-remove:active {
+      transform: scale(0.9);
+    }
+
+    /* Photo slot number badge */
+    .photo-number {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 22px;
+      height: 22px;
+      background: rgba(0, 212, 170, 0.8);
+      border-radius: 11px;
+      color: var(--bg-deep);
+      font-size: 11px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -298,48 +531,56 @@
     }
 
     /* ========================================
-       ITEM TYPE SELECTOR — pill buttons
+       ITEM TYPE PILLS
        ======================================== */
     .type-pills {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 12px;
     }
 
     .type-pill {
       padding: 8px 14px;
-      background: #0f3460;
-      border: 1px solid #1a4a8a;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      color: #8a8a9a;
+      color: var(--text-dim);
       font-size: 13px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .type-pill:active {
+      transform: scale(0.95);
     }
 
     .type-pill.active {
-      background: #00d4aa;
-      color: #1a1a2e;
-      border-color: #00d4aa;
-      font-weight: 600;
+      background: linear-gradient(135deg, #00d4aa, #00b894);
+      color: var(--bg-deep);
+      border-color: transparent;
+      font-weight: 700;
+      box-shadow: 0 2px 12px var(--accent-glow);
     }
 
     /* ========================================
-       CHARACTER COUNTER for title field
+       CHARACTER COUNTER
        ======================================== */
     .char-count {
-      font-size: 12px;
+      font-size: 11px;
       text-align: right;
       margin-top: -8px;
       margin-bottom: 12px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
     }
 
-    .char-count.over { color: #e94560; }
-    .char-count.ok { color: #8a8a9a; }
+    .char-count.over { color: var(--danger); }
+    .char-count.ok { color: var(--text-dim); }
+    .char-count.good { color: var(--accent); }
 
     /* ========================================
-       CONDITION SELECTOR — radio-style buttons
+       CONDITION SELECTOR
        ======================================== */
     .condition-group {
       display: flex;
@@ -350,24 +591,31 @@
     .condition-btn {
       flex: 1;
       padding: 10px 8px;
-      background: #0f3460;
-      border: 1px solid #1a4a8a;
-      border-radius: 8px;
-      color: #8a8a9a;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-dim);
       font-size: 12px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.25s;
+      font-weight: 600;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .condition-btn:active {
+      transform: scale(0.95);
     }
 
     .condition-btn.active {
-      border-color: #00d4aa;
-      color: #00d4aa;
-      font-weight: 600;
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0, 212, 170, 0.08);
+      box-shadow: 0 0 10px var(--accent-glow);
     }
 
     /* ========================================
-       ITEM SPECIFICS — key/value pairs
+       ITEM SPECIFICS
        ======================================== */
     .specifics-row {
       display: flex;
@@ -375,51 +623,54 @@
       margin-bottom: 8px;
     }
 
-    .specifics-row input {
-      margin-bottom: 0;
-    }
-
-    .specifics-row input:first-child {
-      flex: 2;
-    }
-
-    .specifics-row input:last-child {
-      flex: 3;
-    }
+    .specifics-row input { margin-bottom: 0; }
+    .specifics-row input:first-child { flex: 2; }
+    .specifics-row input:nth-child(2) { flex: 3; }
 
     .specifics-remove {
-      width: 36px;
-      min-width: 36px;
+      width: 40px;
+      min-width: 40px;
       padding: 0;
       background: none;
-      border: 1px solid #e94560;
-      border-radius: 8px;
-      color: #e94560;
+      border: 1px solid rgba(233, 69, 96, 0.3);
+      border-radius: 10px;
+      color: var(--danger);
       font-size: 18px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .specifics-remove:active {
+      background: rgba(233, 69, 96, 0.1);
+      transform: scale(0.9);
     }
 
     /* ========================================
-       COPY FEEDBACK — toast notification
+       TOAST NOTIFICATION — slides up with icon
        ======================================== */
     .toast {
       position: fixed;
-      bottom: 80px;
+      bottom: 90px;
       left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #00d4aa;
-      color: #1a1a2e;
-      padding: 10px 24px;
-      border-radius: 8px;
+      transform: translateX(-50%) translateY(30px);
+      background: rgba(10, 10, 26, 0.95);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 12px 24px;
+      border-radius: 12px;
       font-weight: 600;
       font-size: 14px;
       opacity: 0;
       transition: opacity 0.3s, transform 0.3s;
       z-index: 200;
       pointer-events: none;
+      box-shadow: 0 8px 32px rgba(0, 212, 170, 0.15);
+      white-space: nowrap;
     }
 
     .toast.show {
@@ -428,39 +679,63 @@
     }
 
     /* ========================================
-       LOADING SPINNER — shown during AI generation
+       LOADING OVERLAY — pulsing AI dots
        ======================================== */
     .loading-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(26, 26, 46, 0.9);
+      background: rgba(10, 10, 26, 0.92);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
+      gap: 24px;
       z-index: 300;
     }
 
     .loading-overlay.hidden { display: none; }
 
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid #0f3460;
-      border-top-color: #00d4aa;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    /* Three pulsing dots animation */
+    .ai-dots {
+      display: flex;
+      gap: 12px;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .ai-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: aiPulse 1.4s ease-in-out infinite;
+    }
+
+    .ai-dot:nth-child(2) {
+      animation-delay: 0.2s;
+      background: var(--accent-secondary);
+    }
+
+    .ai-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes aiPulse {
+      0%, 100% { transform: scale(0.6); opacity: 0.3; }
+      50% { transform: scale(1.2); opacity: 1; }
     }
 
     .loading-text {
-      color: #00d4aa;
-      font-size: 16px;
+      color: var(--text);
+      font-size: 15px;
       font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .loading-subtext {
+      color: var(--text-dim);
+      font-size: 12px;
+      margin-top: -16px;
     }
 
     /* ========================================
@@ -470,25 +745,28 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      background: #16213e;
-      border: 1px solid #0f3460;
-      border-radius: 10px;
+      background: var(--bg-card);
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--border);
+      border-radius: 14px;
       padding: 12px;
       margin-bottom: 10px;
       cursor: pointer;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, transform 0.15s;
     }
 
     .draft-item:active {
-      border-color: #00d4aa;
+      border-color: var(--accent);
+      transform: scale(0.98);
     }
 
     .draft-thumb {
-      width: 56px;
-      height: 56px;
-      min-width: 56px;
-      border-radius: 8px;
-      background: #0f3460;
+      width: 52px;
+      height: 52px;
+      min-width: 52px;
+      border-radius: 10px;
+      background: var(--bg-input);
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -502,8 +780,8 @@
     }
 
     .draft-thumb .no-photo {
-      color: #1a4a8a;
-      font-size: 24px;
+      color: var(--text-dim);
+      font-size: 20px;
     }
 
     .draft-info {
@@ -514,16 +792,19 @@
     .draft-title {
       font-size: 14px;
       font-weight: 600;
-      color: #e0e0e0;
+      color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .draft-meta {
-      font-size: 12px;
-      color: #8a8a9a;
-      margin-top: 2px;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .draft-delete {
@@ -531,88 +812,91 @@
       height: 36px;
       min-width: 36px;
       background: none;
-      border: 1px solid #e94560;
-      border-radius: 8px;
-      color: #e94560;
+      border: 1px solid rgba(233, 69, 96, 0.3);
+      border-radius: 10px;
+      color: var(--danger);
       font-size: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .draft-delete:active {
+      background: rgba(233, 69, 96, 0.1);
+      transform: scale(0.9);
     }
 
     .empty-state {
       text-align: center;
       padding: 60px 20px;
-      color: #8a8a9a;
+      color: var(--text-dim);
     }
 
-    .empty-state .icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-      opacity: 0.3;
+    .empty-state .empty-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      fill: rgba(0, 212, 170, 0.15);
     }
+
+    .empty-state p { font-size: 14px; }
+    .empty-state .hint { font-size: 12px; margin-top: 6px; }
 
     /* ========================================
-       SETTINGS PAGE
+       SETTINGS
        ======================================== */
     .setting-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 12px 0;
-      border-bottom: 1px solid #0f3460;
+      border-bottom: 1px solid var(--border);
     }
 
-    .setting-row:last-child {
-      border-bottom: none;
-    }
+    .setting-row:last-child { border-bottom: none; }
 
-    .setting-label {
-      font-size: 14px;
-    }
+    .setting-label { font-size: 14px; }
 
     .setting-value {
       font-size: 14px;
-      color: #00d4aa;
+      color: var(--accent);
+      font-weight: 600;
     }
 
     /* ========================================
-       INLINE COPY — tap a field label to copy just that value
+       COPYABLE LABELS — tap to copy
        ======================================== */
     .copyable-label {
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      transition: color 0.2s;
     }
 
-    .copyable-label::after {
-      content: '';
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      /* Tiny clipboard icon via CSS */
-      background: currentColor;
-      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z'/%3E%3C/svg%3E") no-repeat center;
-      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z'/%3E%3C/svg%3E") no-repeat center;
+    .copyable-label:active { color: var(--accent); }
+
+    .copyable-label .copy-icon {
+      width: 11px;
+      height: 11px;
+      fill: currentColor;
       opacity: 0.4;
     }
 
     /* ========================================
-       PRICE / QTY ROW — side by side
+       PRICE / QTY ROW
        ======================================== */
     .price-qty-row {
       display: flex;
       gap: 12px;
     }
 
-    .price-qty-row > div {
-      flex: 1;
-    }
+    .price-qty-row > div { flex: 1; }
 
     /* ========================================
-       ACTION BUTTONS — sticky at bottom of new listing form
+       ACTION BUTTONS
        ======================================== */
     .action-buttons {
       display: flex;
@@ -620,259 +904,290 @@
       margin-top: 8px;
     }
 
-    .action-buttons .btn {
-      flex: 1;
+    .action-buttons .btn { flex: 1; }
+
+    /* ========================================
+       CONFETTI CANVAS — overlays briefly on copy
+       ======================================== */
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 250;
+      pointer-events: none;
     }
+
+    /* ========================================
+       LINK STYLES
+       ======================================== */
+    a { color: var(--accent); }
+    a:visited { color: var(--accent-secondary); }
   </style>
 </head>
 <body>
 
-  <!-- ========================================
-       HEADER
-       ======================================== -->
-  <div class="header">
-    <h1>eBay Lister</h1>
-  </div>
+  <!-- Confetti overlay canvas -->
+  <canvas id="confettiCanvas"></canvas>
 
-  <!-- ========================================
-       TAB: NEW LISTING
-       Photo capture, AI generation, listing editor
-       ======================================== -->
-  <div id="tab-new" class="tab-content active">
+  <div class="app-container">
 
-    <!-- Photo Section -->
-    <div class="card">
-      <h2>Photos</h2>
-      <div class="photo-grid" id="photoGrid">
-        <!-- 4 photo slots — tap to add, X to remove -->
-        <div class="photo-slot" data-slot="0" onclick="addPhoto(0)">
-          <span class="add-icon">+</span>
-        </div>
-        <div class="photo-slot" data-slot="1" onclick="addPhoto(1)">
-          <span class="add-icon">+</span>
-        </div>
-        <div class="photo-slot" data-slot="2" onclick="addPhoto(2)">
-          <span class="add-icon">+</span>
-        </div>
-        <div class="photo-slot" data-slot="3" onclick="addPhoto(3)">
-          <span class="add-icon">+</span>
-        </div>
-      </div>
-      <!-- Hidden file input — triggered by tapping photo slots -->
-      <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+    <!-- ========================================
+         HEADER
+         ======================================== -->
+    <div class="header">
+      <h1>eBay Lister</h1>
+      <div class="subtitle">AI-Powered Listings</div>
     </div>
 
-    <!-- Item Type — helps AI narrow down the listing -->
-    <div class="card">
-      <h2>Item Type</h2>
-      <div class="type-pills" id="typePills">
-        <button class="type-pill" data-type="appliance_part">Appliance Part</button>
-        <button class="type-pill" data-type="audio_cable">Audio Cable</button>
-        <button class="type-pill" data-type="cable_bulk">Bulk Cable</button>
-        <button class="type-pill" data-type="tool">Tool</button>
-        <button class="type-pill" data-type="electronics">Electronics</button>
-        <button class="type-pill" data-type="other">Other</button>
-      </div>
+    <!-- Session streak bar — shows after first listing -->
+    <div class="streak-bar hidden" id="streakBar">
+      <span class="count" id="streakCount">0</span>
+      <span>listings this session — keep going!</span>
     </div>
 
-    <!-- Generate Button — sends photos + type to Gemini -->
-    <button class="btn btn-primary" id="generateBtn" onclick="generateListing()" disabled>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      Generate Listing
-    </button>
+    <!-- ========================================
+         TAB: NEW LISTING
+         ======================================== -->
+    <div id="tab-new" class="tab-content active">
 
-    <!-- Listing Editor — populated by AI, fully editable -->
-    <div id="editorSection" style="display:none; margin-top: 16px;">
-
+      <!-- Photo Section -->
       <div class="card">
-        <h2>Listing Details</h2>
-
-        <!-- Title with char counter -->
-        <label class="copyable-label" onclick="copyField('listingTitle')">Title</label>
-        <input type="text" id="listingTitle" placeholder="eBay listing title" maxlength="80" oninput="updateCharCount()">
-        <div class="char-count ok" id="charCount">0 / 80</div>
-
-        <!-- Condition -->
-        <label>Condition</label>
-        <div class="condition-group" id="conditionGroup">
-          <button class="condition-btn" data-cond="New" onclick="setCondition('New')">New</button>
-          <button class="condition-btn active" data-cond="Used" onclick="setCondition('Used')">Used</button>
-          <button class="condition-btn" data-cond="For Parts or Not Working" onclick="setCondition('For Parts or Not Working')">For Parts</button>
+        <h2>Photos</h2>
+        <div class="photo-grid" id="photoGrid">
+          <div class="photo-slot" data-slot="0" onclick="addPhoto(0)">
+            <svg class="slot-icon" viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+            <span class="slot-label">Tap to add</span>
+          </div>
+          <div class="photo-slot" data-slot="1" onclick="addPhoto(1)">
+            <svg class="slot-icon" viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+            <span class="slot-label">Photo 2</span>
+          </div>
+          <div class="photo-slot" data-slot="2" onclick="addPhoto(2)">
+            <svg class="slot-icon" viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+            <span class="slot-label">Photo 3</span>
+          </div>
+          <div class="photo-slot" data-slot="3" onclick="addPhoto(3)">
+            <svg class="slot-icon" viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+            <span class="slot-label">Photo 4</span>
+          </div>
         </div>
+        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+      </div>
 
-        <!-- Category -->
-        <label class="copyable-label" onclick="copyField('listingCategory')">Category</label>
-        <input type="text" id="listingCategory" placeholder="eBay category">
-
-        <!-- Description -->
-        <label class="copyable-label" onclick="copyField('listingDesc')">Description</label>
-        <textarea id="listingDesc" placeholder="Item description..."></textarea>
-
-        <!-- Price & Quantity -->
-        <div class="price-qty-row">
-          <div>
-            <label>Price ($)</label>
-            <input type="number" id="listingPrice" placeholder="0.00" step="0.01" min="0">
-          </div>
-          <div>
-            <label>Quantity</label>
-            <input type="number" id="listingQty" value="1" min="1">
-          </div>
+      <!-- Item Type -->
+      <div class="card">
+        <h2>Item Type</h2>
+        <div class="type-pills" id="typePills">
+          <button class="type-pill" data-type="appliance_part">Appliance Part</button>
+          <button class="type-pill" data-type="audio_cable">Audio Cable</button>
+          <button class="type-pill" data-type="cable_bulk">Bulk Cable</button>
+          <button class="type-pill" data-type="tool">Tool</button>
+          <button class="type-pill" data-type="electronics">Electronics</button>
+          <button class="type-pill" data-type="other">Other</button>
         </div>
       </div>
 
-      <!-- Item Specifics — brand, model, etc. -->
-      <div class="card">
-        <h2>Item Specifics</h2>
-        <div id="specificsContainer"></div>
-        <button class="btn btn-secondary btn-small" onclick="addSpecificRow()">+ Add Specific</button>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="action-buttons">
-        <button class="btn btn-copy" onclick="copyListing()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-          Copy Listing
-        </button>
-        <button class="btn btn-secondary" onclick="saveDraft()">
-          Save Draft
+      <!-- Generate Button — animated gradient border wrapper -->
+      <div class="generate-wrapper disabled" id="generateWrapper">
+        <button class="btn" id="generateBtn" onclick="generateListing()" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 5.6L10 7 8.6 4.5 10 2 7.5 3.4 5 2l1.4 2.5L5 7zm12 9.8L17 14l1.4 2.5L17 19l2.5-1.4L22 19l-1.4-2.5L22 14zM22 2l-2.5 1.4L17 2l1.4 2.5L17 7l2.5-1.4L22 7l-1.4-2.5zm-7.63 5.29a1 1 0 00-1.41 0L1.29 18.96a1 1 0 000 1.41l2.34 2.34a1 1 0 001.41 0L16.71 11.04a1 1 0 000-1.41l-2.34-2.34z"/></svg>
+          Generate Listing
         </button>
       </div>
 
-      <div style="height: 8px"></div>
+      <!-- Listing Editor — populated by AI -->
+      <div id="editorSection" style="display:none; margin-top: 16px;">
 
-      <button class="btn btn-secondary" onclick="clearListing()">Clear &amp; Start New</button>
-    </div>
-  </div>
+        <div class="card">
+          <h2>Listing Details</h2>
 
-  <!-- ========================================
-       TAB: DRAFTS
-       Saved listings waiting to be posted
-       ======================================== -->
-  <div id="tab-drafts" class="tab-content">
-    <div id="draftsList"></div>
-  </div>
+          <label class="copyable-label" onclick="copyField('listingTitle')">
+            Title
+            <svg class="copy-icon" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          </label>
+          <input type="text" id="listingTitle" placeholder="eBay listing title" maxlength="80" oninput="updateCharCount()">
+          <div class="char-count ok" id="charCount">0 / 80</div>
 
-  <!-- ========================================
-       TAB: SETTINGS
-       API key, defaults
-       ======================================== -->
-  <div id="tab-settings" class="tab-content">
-    <div class="card">
-      <h2>Gemini API Key</h2>
-      <p style="font-size: 13px; color: #8a8a9a; margin-bottom: 12px;">
-        Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #00d4aa;">Google AI Studio</a>. Stored locally on this device only.
-      </p>
-      <input type="text" id="apiKeyInput" placeholder="Paste your Gemini API key">
-      <button class="btn btn-primary btn-small" onclick="saveApiKey()" style="width: auto;">Save Key</button>
-    </div>
+          <label>Condition</label>
+          <div class="condition-group" id="conditionGroup">
+            <button class="condition-btn" data-cond="New" onclick="setCondition('New')">New</button>
+            <button class="condition-btn active" data-cond="Used" onclick="setCondition('Used')">Used</button>
+            <button class="condition-btn" data-cond="For Parts or Not Working" onclick="setCondition('For Parts or Not Working')">For Parts</button>
+          </div>
 
-    <div class="card">
-      <h2>Defaults</h2>
+          <label class="copyable-label" onclick="copyField('listingCategory')">
+            Category
+            <svg class="copy-icon" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          </label>
+          <input type="text" id="listingCategory" placeholder="eBay category">
 
-      <label>Default Condition</label>
-      <select id="defaultCondition">
-        <option value="New">New</option>
-        <option value="Used" selected>Used</option>
-        <option value="For Parts or Not Working">For Parts or Not Working</option>
-      </select>
+          <label class="copyable-label" onclick="copyField('listingDesc')">
+            Description
+            <svg class="copy-icon" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          </label>
+          <textarea id="listingDesc" placeholder="Item description..."></textarea>
 
-      <label>Default Item Type</label>
-      <select id="defaultType">
-        <option value="">None</option>
-        <option value="appliance_part">Appliance Part</option>
-        <option value="audio_cable">Audio Cable</option>
-        <option value="cable_bulk">Bulk Cable</option>
-        <option value="tool">Tool</option>
-        <option value="electronics">Electronics</option>
-        <option value="other">Other</option>
-      </select>
+          <div class="price-qty-row">
+            <div>
+              <label>Price ($)</label>
+              <input type="number" id="listingPrice" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div>
+              <label>Quantity</label>
+              <input type="number" id="listingQty" value="1" min="1">
+            </div>
+          </div>
+        </div>
 
-      <button class="btn btn-secondary btn-small" onclick="saveDefaults()" style="width: auto; margin-top: 4px;">Save Defaults</button>
-    </div>
+        <!-- Item Specifics -->
+        <div class="card">
+          <h2>Item Specifics</h2>
+          <div id="specificsContainer"></div>
+          <button class="btn btn-secondary btn-small" onclick="addSpecificRow()">+ Add Specific</button>
+        </div>
 
-    <div class="card">
-      <h2>About</h2>
-      <div class="setting-row">
-        <span class="setting-label">Version</span>
-        <span class="setting-value">1.0</span>
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="btn btn-copy" onclick="copyListing()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            Copy Listing
+          </button>
+          <button class="btn btn-secondary" onclick="saveDraft()">
+            Save Draft
+          </button>
+        </div>
+
+        <div style="height: 8px"></div>
+
+        <button class="btn btn-secondary" onclick="clearListing()" style="opacity: 0.6; font-size: 13px;">
+          Clear &amp; Start New
+        </button>
       </div>
-      <div class="setting-row">
-        <span class="setting-label">Drafts Saved</span>
-        <span class="setting-value" id="draftCountSetting">0</span>
+    </div>
+
+    <!-- ========================================
+         TAB: DRAFTS
+         ======================================== -->
+    <div id="tab-drafts" class="tab-content">
+      <div id="draftsList"></div>
+    </div>
+
+    <!-- ========================================
+         TAB: SETTINGS
+         ======================================== -->
+    <div id="tab-settings" class="tab-content">
+      <div class="card">
+        <h2>Gemini API Key</h2>
+        <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 12px;">
+          Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. Stored locally on this device only.
+        </p>
+        <input type="text" id="apiKeyInput" placeholder="Paste your Gemini API key">
+        <button class="btn btn-primary btn-small" onclick="saveApiKey()" style="width: auto;">Save Key</button>
       </div>
-      <div style="margin-top: 12px;">
-        <button class="btn btn-danger btn-small" onclick="clearAllDrafts()" style="width: auto;">Delete All Drafts</button>
+
+      <div class="card">
+        <h2>Defaults</h2>
+
+        <label>Default Condition</label>
+        <select id="defaultCondition">
+          <option value="New">New</option>
+          <option value="Used" selected>Used</option>
+          <option value="For Parts or Not Working">For Parts or Not Working</option>
+        </select>
+
+        <label>Default Item Type</label>
+        <select id="defaultType">
+          <option value="">None</option>
+          <option value="appliance_part">Appliance Part</option>
+          <option value="audio_cable">Audio Cable</option>
+          <option value="cable_bulk">Bulk Cable</option>
+          <option value="tool">Tool</option>
+          <option value="electronics">Electronics</option>
+          <option value="other">Other</option>
+        </select>
+
+        <button class="btn btn-secondary btn-small" onclick="saveDefaults()" style="width: auto; margin-top: 4px;">Save Defaults</button>
+      </div>
+
+      <div class="card">
+        <h2>About</h2>
+        <div class="setting-row">
+          <span class="setting-label">Version</span>
+          <span class="setting-value">1.0</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Drafts Saved</span>
+          <span class="setting-value" id="draftCountSetting">0</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Session Listings</span>
+          <span class="setting-value" id="sessionCountSetting">0</span>
+        </div>
+        <div style="margin-top: 12px;">
+          <button class="btn btn-danger btn-small" onclick="clearAllDrafts()" style="width: auto;">Delete All Drafts</button>
+        </div>
       </div>
     </div>
-  </div>
+
+  </div><!-- /app-container -->
 
   <!-- ========================================
        BOTTOM TAB BAR
        ======================================== -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="tab-new" onclick="switchTab('tab-new')">
-      <!-- Plus/new icon -->
       <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
       New
     </button>
     <button class="tab-btn" data-tab="tab-drafts" onclick="switchTab('tab-drafts')">
-      <!-- Folder/drafts icon -->
       <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
       Drafts
       <span class="draft-badge hidden" id="draftBadge">0</span>
     </button>
     <button class="tab-btn" data-tab="tab-settings" onclick="switchTab('tab-settings')">
-      <!-- Gear icon -->
       <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
       Settings
     </button>
   </div>
 
-  <!-- Toast notification — pops up briefly after copying -->
+  <!-- Toast notification -->
   <div class="toast" id="toast">Copied!</div>
 
-  <!-- Loading overlay — shown during AI generation -->
+  <!-- Loading overlay -->
   <div class="loading-overlay hidden" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div class="loading-text">Generating listing...</div>
+    <div class="ai-dots">
+      <div class="ai-dot"></div>
+      <div class="ai-dot"></div>
+      <div class="ai-dot"></div>
+    </div>
+    <div class="loading-text">Analyzing photos...</div>
+    <div class="loading-subtext">Gemini is writing your listing</div>
   </div>
 
   <!-- ========================================
-       JAVASCRIPT — All app logic
+       JAVASCRIPT
        ======================================== -->
   <script>
     // ========================================
     // APP STATE
     // ========================================
 
-    // Holds base64 image data for up to 4 photos
     const photos = [null, null, null, null];
-
-    // Which photo slot the file input is currently targeting
     let activePhotoSlot = 0;
-
-    // Currently selected item type (e.g. "appliance_part")
     let selectedType = '';
-
-    // Currently selected condition
     let selectedCondition = 'Used';
-
-    // Currently editing draft ID (null = new listing)
     let editingDraftId = null;
+    let sessionListings = 0; // Session streak counter
 
     // ========================================
     // INITIALIZATION
     // ========================================
 
     function init() {
-      // Load saved API key into settings input
+      // Load saved API key
       const key = localStorage.getItem('ebay-lister-api-key');
-      if (key) {
-        document.getElementById('apiKeyInput').value = key;
-      }
+      if (key) document.getElementById('apiKeyInput').value = key;
 
-      // Load default settings
+      // Load defaults
       const defaultCond = localStorage.getItem('ebay-lister-default-condition');
       if (defaultCond) {
         selectedCondition = defaultCond;
@@ -886,34 +1201,40 @@
         setItemType(defaultType);
       }
 
-      // Update draft badge count
       updateDraftBadge();
-
-      // Update generate button state
       updateGenerateBtn();
+
+      // Size confetti canvas
+      const canvas = document.getElementById('confettiCanvas');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
     }
 
-    // Run init when page loads
     init();
 
     // ========================================
-    // TAB NAVIGATION
+    // TAB NAVIGATION — with fade animation
     // ========================================
 
     function switchTab(tabId) {
-      // Hide all tabs, show selected one
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-      document.getElementById(tabId).classList.add('active');
+      const tab = document.getElementById(tabId);
+      tab.classList.add('active');
       document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
 
-      // Refresh drafts list when switching to drafts tab
-      if (tabId === 'tab-drafts') renderDrafts();
+      // Scroll to top on tab switch
+      window.scrollTo({ top: 0 });
 
-      // Refresh draft count on settings
+      if (tabId === 'tab-drafts') renderDrafts();
       if (tabId === 'tab-settings') {
         document.getElementById('draftCountSetting').textContent = getDrafts().length;
+        document.getElementById('sessionCountSetting').textContent = sessionListings;
       }
     }
 
@@ -921,22 +1242,17 @@
     // PHOTO HANDLING
     // ========================================
 
-    // Opens camera/gallery for a specific photo slot
     function addPhoto(slot) {
-      // If slot already has a photo, don't open picker (use X button to remove first)
       if (photos[slot]) return;
-
       activePhotoSlot = slot;
       document.getElementById('photoInput').click();
     }
 
-    // Handles file input change — compresses and stores the image
     document.getElementById('photoInput').addEventListener('change', async function(e) {
       const file = e.target.files[0];
       if (!file) return;
 
       try {
-        // Compress the image before storing (saves bandwidth for AI calls)
         const compressed = await compressImage(file, 1024, 0.8);
         photos[activePhotoSlot] = compressed;
         renderPhotoSlot(activePhotoSlot);
@@ -945,37 +1261,25 @@
         showToast('Error loading photo');
       }
 
-      // Reset input so same file can be selected again
       this.value = '';
     });
 
-    // Compresses an image file to JPEG, max dimension, quality
-    // Returns a base64 data URL
+    // Compresses image to JPEG via canvas — saves cell data bandwidth
     function compressImage(file, maxDim, quality) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = function(e) {
           const img = new Image();
           img.onload = function() {
-            // Calculate new dimensions keeping aspect ratio
-            let w = img.width;
-            let h = img.height;
+            let w = img.width, h = img.height;
             if (w > maxDim || h > maxDim) {
-              if (w > h) {
-                h = Math.round(h * maxDim / w);
-                w = maxDim;
-              } else {
-                w = Math.round(w * maxDim / h);
-                h = maxDim;
-              }
+              if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+              else { w = Math.round(w * maxDim / h); h = maxDim; }
             }
-
-            // Draw to canvas and export as JPEG
             const canvas = document.createElement('canvas');
             canvas.width = w;
             canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
             resolve(canvas.toDataURL('image/jpeg', quality));
           };
           img.onerror = reject;
@@ -986,22 +1290,25 @@
       });
     }
 
-    // Updates a photo slot's display — shows image or "+" icon
     function renderPhotoSlot(slot) {
       const el = document.querySelectorAll('.photo-slot')[slot];
       if (photos[slot]) {
         el.classList.add('has-photo');
         el.innerHTML = `
           <img src="${photos[slot]}" alt="Photo ${slot + 1}">
+          <span class="photo-number">${slot + 1}</span>
           <button class="photo-remove" onclick="event.stopPropagation(); removePhoto(${slot})">×</button>
         `;
       } else {
         el.classList.remove('has-photo');
-        el.innerHTML = '<span class="add-icon">+</span>';
+        const labels = ['Tap to add', 'Photo 2', 'Photo 3', 'Photo 4'];
+        el.innerHTML = `
+          <svg class="slot-icon" viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+          <span class="slot-label">${labels[slot]}</span>
+        `;
       }
     }
 
-    // Removes a photo from a slot
     function removePhoto(slot) {
       photos[slot] = null;
       renderPhotoSlot(slot);
@@ -1012,7 +1319,6 @@
     // ITEM TYPE SELECTION
     // ========================================
 
-    // Set up click handlers for type pills
     document.querySelectorAll('.type-pill').forEach(pill => {
       pill.addEventListener('click', () => setItemType(pill.dataset.type));
     });
@@ -1040,9 +1346,9 @@
     // ========================================
 
     function updateGenerateBtn() {
-      // Enable only if at least 1 photo is added
       const hasPhotos = photos.some(p => p !== null);
       document.getElementById('generateBtn').disabled = !hasPhotos;
+      document.getElementById('generateWrapper').classList.toggle('disabled', !hasPhotos);
     }
 
     // ========================================
@@ -1057,19 +1363,18 @@
         return;
       }
 
-      // Collect photos that have data
       const activePhotos = photos.filter(p => p !== null);
       if (activePhotos.length === 0) {
         showToast('Add at least one photo');
         return;
       }
 
-      // Show loading spinner
       document.getElementById('loadingOverlay').classList.remove('hidden');
 
       try {
-        // Build the prompt for Gemini
-        const typeHint = selectedType ? `Item type hint: ${selectedType.replace('_', ' ')}` : 'Item type: unknown — determine from photos';
+        const typeHint = selectedType
+          ? `Item type hint: ${selectedType.replace(/_/g, ' ')}`
+          : 'Item type: unknown — determine from photos';
 
         const prompt = `You are an eBay listing expert. Analyze these photos of an item I want to sell on eBay.
 
@@ -1085,58 +1390,46 @@ ${typeHint}
 
 Be accurate. If you can't determine something from the photos, make your best reasonable guess and note uncertainty in the description.`;
 
-        // Build the request parts — images as inline_data, then the text prompt
         const parts = [];
-
-        // Add each photo as an inline image part
         for (const photo of activePhotos) {
-          // Extract base64 data from data URL (strip "data:image/jpeg;base64," prefix)
-          const base64Data = photo.split(',')[1];
           parts.push({
             inline_data: {
               mime_type: 'image/jpeg',
-              data: base64Data
+              data: photo.split(',')[1]
             }
           });
         }
-
-        // Add the text prompt
         parts.push({ text: prompt });
 
-        // Call Gemini REST API directly (no SDK needed)
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [{ parts: parts }],
-              generationConfig: {
-                temperature: 0.3,  // Low temp for more consistent/factual output
-                maxOutputTokens: 1024
-              }
+              contents: [{ parts }],
+              generationConfig: { temperature: 0.3, maxOutputTokens: 1024 }
             })
           }
         );
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          const errMsg = errData?.error?.message || `API error ${response.status}`;
-          throw new Error(errMsg);
+          throw new Error(errData?.error?.message || `API error ${response.status}`);
         }
 
         const data = await response.json();
-
-        // Extract the text response from Gemini
         const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!textResponse) throw new Error('No response from Gemini');
 
-        // Parse the JSON from the response (strip any markdown code fences if present)
         const cleanJson = textResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
         const listing = JSON.parse(cleanJson);
 
-        // Populate the form fields with AI-generated data
         populateEditor(listing);
+
+        // Update session streak
+        sessionListings++;
+        updateStreak();
 
       } catch (err) {
         console.error('Generation error:', err);
@@ -1146,57 +1439,56 @@ Be accurate. If you can't determine something from the photos, make your best re
       }
     }
 
-    // Fills in the editor form with AI-generated listing data
     function populateEditor(listing) {
       document.getElementById('listingTitle').value = listing.title || '';
       document.getElementById('listingDesc').value = listing.description || '';
       document.getElementById('listingCategory').value = listing.category || '';
 
-      // Set condition from AI (or keep default)
-      if (listing.condition) {
-        setCondition(listing.condition);
-      }
+      if (listing.condition) setCondition(listing.condition);
 
-      // Populate item specifics
       const container = document.getElementById('specificsContainer');
       container.innerHTML = '';
 
-      // Always add brand first if present
-      if (listing.brand) {
-        addSpecificRow('Brand', listing.brand);
-      }
+      if (listing.brand) addSpecificRow('Brand', listing.brand);
 
-      // Add any other specifics from AI
       if (listing.itemSpecifics && typeof listing.itemSpecifics === 'object') {
         for (const [key, value] of Object.entries(listing.itemSpecifics)) {
-          if (key.toLowerCase() !== 'brand') { // Skip brand, already added
-            addSpecificRow(key, String(value));
-          }
+          if (key.toLowerCase() !== 'brand') addSpecificRow(key, String(value));
         }
       }
 
       updateCharCount();
-
-      // Show the editor section
       document.getElementById('editorSection').style.display = 'block';
-
-      // Scroll to the editor
       document.getElementById('editorSection').scrollIntoView({ behavior: 'smooth' });
     }
 
     // ========================================
-    // CHARACTER COUNTER — eBay title max 80 chars
+    // SESSION STREAK
+    // ========================================
+
+    function updateStreak() {
+      const bar = document.getElementById('streakBar');
+      const count = document.getElementById('streakCount');
+      count.textContent = sessionListings;
+      bar.classList.remove('hidden');
+    }
+
+    // ========================================
+    // CHARACTER COUNTER
     // ========================================
 
     function updateCharCount() {
       const title = document.getElementById('listingTitle').value;
       const counter = document.getElementById('charCount');
-      counter.textContent = `${title.length} / 80`;
-      counter.className = title.length > 80 ? 'char-count over' : 'char-count ok';
+      const len = title.length;
+      counter.textContent = `${len} / 80`;
+      if (len > 80) counter.className = 'char-count over';
+      else if (len > 60) counter.className = 'char-count good';
+      else counter.className = 'char-count ok';
     }
 
     // ========================================
-    // ITEM SPECIFICS — dynamic key/value rows
+    // ITEM SPECIFICS
     // ========================================
 
     function addSpecificRow(key, value) {
@@ -1211,7 +1503,6 @@ Be accurate. If you can't determine something from the photos, make your best re
       container.appendChild(row);
     }
 
-    // HTML escape helper — prevents XSS when inserting user/AI text into HTML
     function escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str;
@@ -1219,7 +1510,7 @@ Be accurate. If you can't determine something from the photos, make your best re
     }
 
     // ========================================
-    // COPY LISTING — formats and copies to clipboard
+    // COPY LISTING + CONFETTI
     // ========================================
 
     async function copyListing() {
@@ -1228,7 +1519,6 @@ Be accurate. If you can't determine something from the photos, make your best re
       const price = document.getElementById('listingPrice').value;
       const category = document.getElementById('listingCategory').value;
 
-      // Gather item specifics
       const specifics = [];
       document.querySelectorAll('.specifics-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
@@ -1237,7 +1527,6 @@ Be accurate. If you can't determine something from the photos, make your best re
         }
       });
 
-      // Build formatted text for pasting into eBay
       let text = `TITLE: ${title}\n\n`;
       text += `CONDITION: ${selectedCondition}\n`;
       if (category) text += `CATEGORY: ${category}\n`;
@@ -1252,12 +1541,12 @@ Be accurate. If you can't determine something from the photos, make your best re
       try {
         await navigator.clipboard.writeText(text);
         showToast('Listing copied!');
+        fireConfetti(); // Reward!
       } catch {
         showToast('Copy failed — try again');
       }
     }
 
-    // Copy a single field value to clipboard (tap the label)
     async function copyField(fieldId) {
       const value = document.getElementById(fieldId).value;
       if (!value) return;
@@ -1270,18 +1559,73 @@ Be accurate. If you can't determine something from the photos, make your best re
     }
 
     // ========================================
-    // TOAST NOTIFICATION — brief popup message
+    // CONFETTI — mini celebration on copy
+    // ========================================
+
+    function fireConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      const particles = [];
+      const colors = ['#00d4aa', '#7b61ff', '#e94560', '#FFD700', '#00b894', '#ff6b81'];
+
+      // Create 60 particles bursting from center-bottom
+      for (let i = 0; i < 60; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height * 0.7,
+          vx: (Math.random() - 0.5) * 12,
+          vy: -Math.random() * 14 - 4,
+          size: Math.random() * 6 + 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 10,
+          life: 1
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+
+        for (const p of particles) {
+          if (p.life <= 0) continue;
+          alive = true;
+
+          p.x += p.vx;
+          p.vy += 0.3; // gravity
+          p.y += p.vy;
+          p.rotation += p.rotSpeed;
+          p.life -= 0.015;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation * Math.PI / 180);
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          ctx.restore();
+        }
+
+        if (alive) requestAnimationFrame(animate);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      animate();
+    }
+
+    // ========================================
+    // TOAST NOTIFICATION
     // ========================================
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
       toast.textContent = msg;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
+      setTimeout(() => toast.classList.remove('show'), 2200);
     }
 
     // ========================================
-    // DRAFTS — save/load/delete from localStorage
+    // DRAFTS
     // ========================================
 
     function getDrafts() {
@@ -1293,7 +1637,6 @@ Be accurate. If you can't determine something from the photos, make your best re
       updateDraftBadge();
     }
 
-    // Save current listing as a draft
     function saveDraft() {
       const title = document.getElementById('listingTitle').value;
       const desc = document.getElementById('listingDesc').value;
@@ -1301,105 +1644,82 @@ Be accurate. If you can't determine something from the photos, make your best re
       const price = document.getElementById('listingPrice').value;
       const qty = document.getElementById('listingQty').value;
 
-      // Gather item specifics
       const specifics = [];
       document.querySelectorAll('.specifics-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
         specifics.push({ key: inputs[0].value, value: inputs[1].value });
       });
 
-      // Build draft object
       const draft = {
         id: editingDraftId || Date.now().toString(),
         title: title || 'Untitled Listing',
         description: desc,
-        category: category,
+        category,
         condition: selectedCondition,
         itemType: selectedType,
-        price: price,
+        price,
         quantity: qty,
-        specifics: specifics,
-        // Store first photo as thumbnail (compressed further for storage efficiency)
+        specifics,
         thumbnail: photos.find(p => p !== null) || null,
-        // Store all photos
         photos: [...photos],
         savedAt: new Date().toISOString()
       };
 
       const drafts = getDrafts();
-
-      // If editing existing draft, replace it; otherwise add new
       const existingIdx = drafts.findIndex(d => d.id === draft.id);
-      if (existingIdx >= 0) {
-        drafts[existingIdx] = draft;
-      } else {
-        drafts.unshift(draft); // Add to beginning (newest first)
-      }
+      if (existingIdx >= 0) drafts[existingIdx] = draft;
+      else drafts.unshift(draft);
 
       saveDrafts(drafts);
       editingDraftId = draft.id;
       showToast('Draft saved!');
     }
 
-    // Load a draft into the editor
     function loadDraft(id) {
-      const drafts = getDrafts();
-      const draft = drafts.find(d => d.id === id);
+      const draft = getDrafts().find(d => d.id === id);
       if (!draft) return;
 
       editingDraftId = id;
 
-      // Restore photos
       for (let i = 0; i < 4; i++) {
         photos[i] = draft.photos?.[i] || null;
         renderPhotoSlot(i);
       }
 
-      // Restore item type
       setItemType(draft.itemType || '');
-
-      // Restore condition
       setCondition(draft.condition || 'Used');
 
-      // Restore form fields
       document.getElementById('listingTitle').value = draft.title || '';
       document.getElementById('listingDesc').value = draft.description || '';
       document.getElementById('listingCategory').value = draft.category || '';
       document.getElementById('listingPrice').value = draft.price || '';
       document.getElementById('listingQty').value = draft.quantity || 1;
 
-      // Restore item specifics
       const container = document.getElementById('specificsContainer');
       container.innerHTML = '';
-      if (draft.specifics) {
-        draft.specifics.forEach(s => addSpecificRow(s.key, s.value));
-      }
+      if (draft.specifics) draft.specifics.forEach(s => addSpecificRow(s.key, s.value));
 
       updateCharCount();
       updateGenerateBtn();
 
-      // Show editor and switch to New tab
       document.getElementById('editorSection').style.display = 'block';
       switchTab('tab-new');
     }
 
-    // Delete a draft
     function deleteDraft(id, e) {
-      e.stopPropagation(); // Don't trigger loadDraft
+      e.stopPropagation();
       const drafts = getDrafts().filter(d => d.id !== id);
       saveDrafts(drafts);
       renderDrafts();
       showToast('Draft deleted');
     }
 
-    // Clear all drafts (from settings)
     function clearAllDrafts() {
       if (!confirm('Delete all drafts? This cannot be undone.')) return;
       saveDrafts([]);
       showToast('All drafts deleted');
     }
 
-    // Render the drafts list
     function renderDrafts() {
       const container = document.getElementById('draftsList');
       const drafts = getDrafts();
@@ -1407,9 +1727,9 @@ Be accurate. If you can't determine something from the photos, make your best re
       if (drafts.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
-            <div class="icon">📋</div>
+            <svg class="empty-icon" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
             <p>No drafts yet</p>
-            <p style="font-size: 13px; margin-top: 8px;">Generate a listing and tap "Save Draft"</p>
+            <p class="hint">Generate a listing, then tap "Save Draft"</p>
           </div>
         `;
         return;
@@ -1427,7 +1747,7 @@ Be accurate. If you can't determine something from the photos, make your best re
             </div>
             <div class="draft-info">
               <div class="draft-title">${escapeHtml(d.title)}</div>
-              <div class="draft-meta">${date} · ${d.condition || 'Used'}</div>
+              <div class="draft-meta">${date} &middot; ${d.condition || 'Used'}${d.price ? ` &middot; $${d.price}` : ''}</div>
             </div>
             <button class="draft-delete" onclick="deleteDraft('${d.id}', event)">×</button>
           </div>
@@ -1435,7 +1755,6 @@ Be accurate. If you can't determine something from the photos, make your best re
       }).join('');
     }
 
-    // Update the draft count badge on the tab bar
     function updateDraftBadge() {
       const count = getDrafts().length;
       const badge = document.getElementById('draftBadge');
@@ -1449,19 +1768,14 @@ Be accurate. If you can't determine something from the photos, make your best re
 
     function saveApiKey() {
       const key = document.getElementById('apiKeyInput').value.trim();
-      if (!key) {
-        showToast('Enter an API key');
-        return;
-      }
+      if (!key) { showToast('Enter an API key'); return; }
       localStorage.setItem('ebay-lister-api-key', key);
       showToast('API key saved!');
     }
 
     function saveDefaults() {
-      const cond = document.getElementById('defaultCondition').value;
-      const type = document.getElementById('defaultType').value;
-      localStorage.setItem('ebay-lister-default-condition', cond);
-      localStorage.setItem('ebay-lister-default-type', type);
+      localStorage.setItem('ebay-lister-default-condition', document.getElementById('defaultCondition').value);
+      localStorage.setItem('ebay-lister-default-type', document.getElementById('defaultType').value);
       showToast('Defaults saved!');
     }
 
@@ -1470,13 +1784,8 @@ Be accurate. If you can't determine something from the photos, make your best re
     // ========================================
 
     function clearListing() {
-      // Reset photos
-      for (let i = 0; i < 4; i++) {
-        photos[i] = null;
-        renderPhotoSlot(i);
-      }
+      for (let i = 0; i < 4; i++) { photos[i] = null; renderPhotoSlot(i); }
 
-      // Reset form
       document.getElementById('listingTitle').value = '';
       document.getElementById('listingDesc').value = '';
       document.getElementById('listingCategory').value = '';
@@ -1484,28 +1793,20 @@ Be accurate. If you can't determine something from the photos, make your best re
       document.getElementById('listingQty').value = '1';
       document.getElementById('specificsContainer').innerHTML = '';
 
-      // Reset state
       editingDraftId = null;
 
-      // Apply defaults
-      const defaultCond = localStorage.getItem('ebay-lister-default-condition') || 'Used';
-      setCondition(defaultCond);
-
-      const defaultType = localStorage.getItem('ebay-lister-default-type') || '';
-      setItemType(defaultType);
+      setCondition(localStorage.getItem('ebay-lister-default-condition') || 'Used');
+      setItemType(localStorage.getItem('ebay-lister-default-type') || '');
 
       updateCharCount();
       updateGenerateBtn();
 
-      // Hide editor
       document.getElementById('editorSection').style.display = 'none';
-
-      // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // ========================================
-    // SERVICE WORKER REGISTRATION
+    // SERVICE WORKER
     // ========================================
 
     if ('serviceWorker' in navigator) {
