@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Makes it mobile-friendly — scales to phone screen width -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <!-- PWA stuff — theme color for browser chrome, manifest for install -->
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="eBay Lister">
+  <link rel="manifest" href="manifest.json">
+  <title>eBay Lister</title>
+
+  <style>
+    /* ========================================
+       BASE STYLES — Dark theme, mobile-first
+       Matches Field Buddy design language
+       ======================================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+      overscroll-behavior: none;
+      padding-bottom: 70px; /* space for bottom tab bar */
+    }
+
+    /* ========================================
+       HEADER
+       ======================================== */
+    .header {
+      background: #16213e;
+      padding: 16px 20px;
+      text-align: center;
+      border-bottom: 2px solid #0f3460;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      color: #00d4aa;
+      letter-spacing: 1px;
+    }
+
+    /* ========================================
+       BOTTOM TAB BAR — New Listing / Drafts / Settings
+       Fixed at bottom for easy thumb access
+       ======================================== */
+    .tab-bar {
+      display: flex;
+      background: #16213e;
+      border-top: 2px solid #0f3460;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      /* Safe area for iPhone notch/home indicator */
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 8px 8px;
+      background: none;
+      border: none;
+      color: #8a8a9a;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    .tab-btn.active {
+      color: #00d4aa;
+    }
+
+    .tab-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    /* Draft count badge — shows number of saved drafts */
+    .draft-badge {
+      position: absolute;
+      top: 4px;
+      right: calc(50% - 20px);
+      background: #e94560;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    .draft-badge.hidden { display: none; }
+
+    /* ========================================
+       TAB CONTENT — Only one visible at a time
+       ======================================== */
+    .tab-content {
+      display: none;
+      padding: 16px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ========================================
+       SHARED UI COMPONENTS
+       ======================================== */
+
+    /* Cards — container for form sections */
+    .card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid #0f3460;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      color: #00d4aa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    /* Form inputs */
+    label {
+      display: block;
+      font-size: 12px;
+      color: #8a8a9a;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px;
+      background: #0f3460;
+      border: 1px solid #1a4a8a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 16px; /* 16px prevents iOS zoom on focus */
+      font-family: inherit;
+      margin-bottom: 12px;
+      -webkit-appearance: none;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #00d4aa;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    /* Buttons */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: #00d4aa;
+      color: #1a1a2e;
+    }
+
+    .btn-secondary {
+      background: #0f3460;
+      color: #e0e0e0;
+      border: 1px solid #1a4a8a;
+    }
+
+    .btn-danger {
+      background: #e94560;
+      color: white;
+    }
+
+    .btn-copy {
+      background: #2196F3;
+      color: white;
+    }
+
+    .btn-small {
+      padding: 8px 14px;
+      font-size: 13px;
+      width: auto;
+    }
+
+    /* ========================================
+       PHOTO SECTION
+       ======================================== */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .photo-slot {
+      aspect-ratio: 1;
+      background: #0f3460;
+      border: 2px dashed #1a4a8a;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .photo-slot.has-photo {
+      border-style: solid;
+      border-color: #00d4aa;
+    }
+
+    .photo-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-slot .add-icon {
+      color: #1a4a8a;
+      font-size: 36px;
+      font-weight: 300;
+    }
+
+    /* Remove photo button — X in top-right corner */
+    .photo-remove {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      background: rgba(233, 69, 96, 0.9);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    /* ========================================
+       ITEM TYPE SELECTOR — pill buttons
+       ======================================== */
+    .type-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .type-pill {
+      padding: 8px 14px;
+      background: #0f3460;
+      border: 1px solid #1a4a8a;
+      border-radius: 20px;
+      color: #8a8a9a;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .type-pill.active {
+      background: #00d4aa;
+      color: #1a1a2e;
+      border-color: #00d4aa;
+      font-weight: 600;
+    }
+
+    /* ========================================
+       CHARACTER COUNTER for title field
+       ======================================== */
+    .char-count {
+      font-size: 12px;
+      text-align: right;
+      margin-top: -8px;
+      margin-bottom: 12px;
+    }
+
+    .char-count.over { color: #e94560; }
+    .char-count.ok { color: #8a8a9a; }
+
+    /* ========================================
+       CONDITION SELECTOR — radio-style buttons
+       ======================================== */
+    .condition-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .condition-btn {
+      flex: 1;
+      padding: 10px 8px;
+      background: #0f3460;
+      border: 1px solid #1a4a8a;
+      border-radius: 8px;
+      color: #8a8a9a;
+      font-size: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .condition-btn.active {
+      border-color: #00d4aa;
+      color: #00d4aa;
+      font-weight: 600;
+    }
+
+    /* ========================================
+       ITEM SPECIFICS — key/value pairs
+       ======================================== */
+    .specifics-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .specifics-row input {
+      margin-bottom: 0;
+    }
+
+    .specifics-row input:first-child {
+      flex: 2;
+    }
+
+    .specifics-row input:last-child {
+      flex: 3;
+    }
+
+    .specifics-remove {
+      width: 36px;
+      min-width: 36px;
+      padding: 0;
+      background: none;
+      border: 1px solid #e94560;
+      border-radius: 8px;
+      color: #e94560;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ========================================
+       COPY FEEDBACK — toast notification
+       ======================================== */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #00d4aa;
+      color: #1a1a2e;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 200;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ========================================
+       LOADING SPINNER — shown during AI generation
+       ======================================== */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 46, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 300;
+    }
+
+    .loading-overlay.hidden { display: none; }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #0f3460;
+      border-top-color: #00d4aa;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: #00d4aa;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    /* ========================================
+       DRAFTS LIST
+       ======================================== */
+    .draft-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .draft-item:active {
+      border-color: #00d4aa;
+    }
+
+    .draft-thumb {
+      width: 56px;
+      height: 56px;
+      min-width: 56px;
+      border-radius: 8px;
+      background: #0f3460;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .draft-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .draft-thumb .no-photo {
+      color: #1a4a8a;
+      font-size: 24px;
+    }
+
+    .draft-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .draft-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .draft-meta {
+      font-size: 12px;
+      color: #8a8a9a;
+      margin-top: 2px;
+    }
+
+    .draft-delete {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      background: none;
+      border: 1px solid #e94560;
+      border-radius: 8px;
+      color: #e94560;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8a8a9a;
+    }
+
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.3;
+    }
+
+    /* ========================================
+       SETTINGS PAGE
+       ======================================== */
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #0f3460;
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      font-size: 14px;
+    }
+
+    .setting-value {
+      font-size: 14px;
+      color: #00d4aa;
+    }
+
+    /* ========================================
+       INLINE COPY — tap a field label to copy just that value
+       ======================================== */
+    .copyable-label {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .copyable-label::after {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      /* Tiny clipboard icon via CSS */
+      background: currentColor;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z'/%3E%3C/svg%3E") no-repeat center;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z'/%3E%3C/svg%3E") no-repeat center;
+      opacity: 0.4;
+    }
+
+    /* ========================================
+       PRICE / QTY ROW — side by side
+       ======================================== */
+    .price-qty-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .price-qty-row > div {
+      flex: 1;
+    }
+
+    /* ========================================
+       ACTION BUTTONS — sticky at bottom of new listing form
+       ======================================== */
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .action-buttons .btn {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================
+       HEADER
+       ======================================== -->
+  <div class="header">
+    <h1>eBay Lister</h1>
+  </div>
+
+  <!-- ========================================
+       TAB: NEW LISTING
+       Photo capture, AI generation, listing editor
+       ======================================== -->
+  <div id="tab-new" class="tab-content active">
+
+    <!-- Photo Section -->
+    <div class="card">
+      <h2>Photos</h2>
+      <div class="photo-grid" id="photoGrid">
+        <!-- 4 photo slots — tap to add, X to remove -->
+        <div class="photo-slot" data-slot="0" onclick="addPhoto(0)">
+          <span class="add-icon">+</span>
+        </div>
+        <div class="photo-slot" data-slot="1" onclick="addPhoto(1)">
+          <span class="add-icon">+</span>
+        </div>
+        <div class="photo-slot" data-slot="2" onclick="addPhoto(2)">
+          <span class="add-icon">+</span>
+        </div>
+        <div class="photo-slot" data-slot="3" onclick="addPhoto(3)">
+          <span class="add-icon">+</span>
+        </div>
+      </div>
+      <!-- Hidden file input — triggered by tapping photo slots -->
+      <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+    </div>
+
+    <!-- Item Type — helps AI narrow down the listing -->
+    <div class="card">
+      <h2>Item Type</h2>
+      <div class="type-pills" id="typePills">
+        <button class="type-pill" data-type="appliance_part">Appliance Part</button>
+        <button class="type-pill" data-type="audio_cable">Audio Cable</button>
+        <button class="type-pill" data-type="cable_bulk">Bulk Cable</button>
+        <button class="type-pill" data-type="tool">Tool</button>
+        <button class="type-pill" data-type="electronics">Electronics</button>
+        <button class="type-pill" data-type="other">Other</button>
+      </div>
+    </div>
+
+    <!-- Generate Button — sends photos + type to Gemini -->
+    <button class="btn btn-primary" id="generateBtn" onclick="generateListing()" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Generate Listing
+    </button>
+
+    <!-- Listing Editor — populated by AI, fully editable -->
+    <div id="editorSection" style="display:none; margin-top: 16px;">
+
+      <div class="card">
+        <h2>Listing Details</h2>
+
+        <!-- Title with char counter -->
+        <label class="copyable-label" onclick="copyField('listingTitle')">Title</label>
+        <input type="text" id="listingTitle" placeholder="eBay listing title" maxlength="80" oninput="updateCharCount()">
+        <div class="char-count ok" id="charCount">0 / 80</div>
+
+        <!-- Condition -->
+        <label>Condition</label>
+        <div class="condition-group" id="conditionGroup">
+          <button class="condition-btn" data-cond="New" onclick="setCondition('New')">New</button>
+          <button class="condition-btn active" data-cond="Used" onclick="setCondition('Used')">Used</button>
+          <button class="condition-btn" data-cond="For Parts or Not Working" onclick="setCondition('For Parts or Not Working')">For Parts</button>
+        </div>
+
+        <!-- Category -->
+        <label class="copyable-label" onclick="copyField('listingCategory')">Category</label>
+        <input type="text" id="listingCategory" placeholder="eBay category">
+
+        <!-- Description -->
+        <label class="copyable-label" onclick="copyField('listingDesc')">Description</label>
+        <textarea id="listingDesc" placeholder="Item description..."></textarea>
+
+        <!-- Price & Quantity -->
+        <div class="price-qty-row">
+          <div>
+            <label>Price ($)</label>
+            <input type="number" id="listingPrice" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div>
+            <label>Quantity</label>
+            <input type="number" id="listingQty" value="1" min="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Item Specifics — brand, model, etc. -->
+      <div class="card">
+        <h2>Item Specifics</h2>
+        <div id="specificsContainer"></div>
+        <button class="btn btn-secondary btn-small" onclick="addSpecificRow()">+ Add Specific</button>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="btn btn-copy" onclick="copyListing()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          Copy Listing
+        </button>
+        <button class="btn btn-secondary" onclick="saveDraft()">
+          Save Draft
+        </button>
+      </div>
+
+      <div style="height: 8px"></div>
+
+      <button class="btn btn-secondary" onclick="clearListing()">Clear &amp; Start New</button>
+    </div>
+  </div>
+
+  <!-- ========================================
+       TAB: DRAFTS
+       Saved listings waiting to be posted
+       ======================================== -->
+  <div id="tab-drafts" class="tab-content">
+    <div id="draftsList"></div>
+  </div>
+
+  <!-- ========================================
+       TAB: SETTINGS
+       API key, defaults
+       ======================================== -->
+  <div id="tab-settings" class="tab-content">
+    <div class="card">
+      <h2>Gemini API Key</h2>
+      <p style="font-size: 13px; color: #8a8a9a; margin-bottom: 12px;">
+        Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #00d4aa;">Google AI Studio</a>. Stored locally on this device only.
+      </p>
+      <input type="text" id="apiKeyInput" placeholder="Paste your Gemini API key">
+      <button class="btn btn-primary btn-small" onclick="saveApiKey()" style="width: auto;">Save Key</button>
+    </div>
+
+    <div class="card">
+      <h2>Defaults</h2>
+
+      <label>Default Condition</label>
+      <select id="defaultCondition">
+        <option value="New">New</option>
+        <option value="Used" selected>Used</option>
+        <option value="For Parts or Not Working">For Parts or Not Working</option>
+      </select>
+
+      <label>Default Item Type</label>
+      <select id="defaultType">
+        <option value="">None</option>
+        <option value="appliance_part">Appliance Part</option>
+        <option value="audio_cable">Audio Cable</option>
+        <option value="cable_bulk">Bulk Cable</option>
+        <option value="tool">Tool</option>
+        <option value="electronics">Electronics</option>
+        <option value="other">Other</option>
+      </select>
+
+      <button class="btn btn-secondary btn-small" onclick="saveDefaults()" style="width: auto; margin-top: 4px;">Save Defaults</button>
+    </div>
+
+    <div class="card">
+      <h2>About</h2>
+      <div class="setting-row">
+        <span class="setting-label">Version</span>
+        <span class="setting-value">1.0</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Drafts Saved</span>
+        <span class="setting-value" id="draftCountSetting">0</span>
+      </div>
+      <div style="margin-top: 12px;">
+        <button class="btn btn-danger btn-small" onclick="clearAllDrafts()" style="width: auto;">Delete All Drafts</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       BOTTOM TAB BAR
+       ======================================== -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="tab-new" onclick="switchTab('tab-new')">
+      <!-- Plus/new icon -->
+      <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      New
+    </button>
+    <button class="tab-btn" data-tab="tab-drafts" onclick="switchTab('tab-drafts')">
+      <!-- Folder/drafts icon -->
+      <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+      Drafts
+      <span class="draft-badge hidden" id="draftBadge">0</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-settings" onclick="switchTab('tab-settings')">
+      <!-- Gear icon -->
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      Settings
+    </button>
+  </div>
+
+  <!-- Toast notification — pops up briefly after copying -->
+  <div class="toast" id="toast">Copied!</div>
+
+  <!-- Loading overlay — shown during AI generation -->
+  <div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Generating listing...</div>
+  </div>
+
+  <!-- ========================================
+       JAVASCRIPT — All app logic
+       ======================================== -->
+  <script>
+    // ========================================
+    // APP STATE
+    // ========================================
+
+    // Holds base64 image data for up to 4 photos
+    const photos = [null, null, null, null];
+
+    // Which photo slot the file input is currently targeting
+    let activePhotoSlot = 0;
+
+    // Currently selected item type (e.g. "appliance_part")
+    let selectedType = '';
+
+    // Currently selected condition
+    let selectedCondition = 'Used';
+
+    // Currently editing draft ID (null = new listing)
+    let editingDraftId = null;
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+
+    function init() {
+      // Load saved API key into settings input
+      const key = localStorage.getItem('ebay-lister-api-key');
+      if (key) {
+        document.getElementById('apiKeyInput').value = key;
+      }
+
+      // Load default settings
+      const defaultCond = localStorage.getItem('ebay-lister-default-condition');
+      if (defaultCond) {
+        selectedCondition = defaultCond;
+        document.getElementById('defaultCondition').value = defaultCond;
+        setCondition(defaultCond);
+      }
+
+      const defaultType = localStorage.getItem('ebay-lister-default-type');
+      if (defaultType) {
+        document.getElementById('defaultType').value = defaultType;
+        setItemType(defaultType);
+      }
+
+      // Update draft badge count
+      updateDraftBadge();
+
+      // Update generate button state
+      updateGenerateBtn();
+    }
+
+    // Run init when page loads
+    init();
+
+    // ========================================
+    // TAB NAVIGATION
+    // ========================================
+
+    function switchTab(tabId) {
+      // Hide all tabs, show selected one
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+
+      // Refresh drafts list when switching to drafts tab
+      if (tabId === 'tab-drafts') renderDrafts();
+
+      // Refresh draft count on settings
+      if (tabId === 'tab-settings') {
+        document.getElementById('draftCountSetting').textContent = getDrafts().length;
+      }
+    }
+
+    // ========================================
+    // PHOTO HANDLING
+    // ========================================
+
+    // Opens camera/gallery for a specific photo slot
+    function addPhoto(slot) {
+      // If slot already has a photo, don't open picker (use X button to remove first)
+      if (photos[slot]) return;
+
+      activePhotoSlot = slot;
+      document.getElementById('photoInput').click();
+    }
+
+    // Handles file input change — compresses and stores the image
+    document.getElementById('photoInput').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        // Compress the image before storing (saves bandwidth for AI calls)
+        const compressed = await compressImage(file, 1024, 0.8);
+        photos[activePhotoSlot] = compressed;
+        renderPhotoSlot(activePhotoSlot);
+        updateGenerateBtn();
+      } catch (err) {
+        showToast('Error loading photo');
+      }
+
+      // Reset input so same file can be selected again
+      this.value = '';
+    });
+
+    // Compresses an image file to JPEG, max dimension, quality
+    // Returns a base64 data URL
+    function compressImage(file, maxDim, quality) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            // Calculate new dimensions keeping aspect ratio
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round(h * maxDim / w);
+                w = maxDim;
+              } else {
+                w = Math.round(w * maxDim / h);
+                h = maxDim;
+              }
+            }
+
+            // Draw to canvas and export as JPEG
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Updates a photo slot's display — shows image or "+" icon
+    function renderPhotoSlot(slot) {
+      const el = document.querySelectorAll('.photo-slot')[slot];
+      if (photos[slot]) {
+        el.classList.add('has-photo');
+        el.innerHTML = `
+          <img src="${photos[slot]}" alt="Photo ${slot + 1}">
+          <button class="photo-remove" onclick="event.stopPropagation(); removePhoto(${slot})">×</button>
+        `;
+      } else {
+        el.classList.remove('has-photo');
+        el.innerHTML = '<span class="add-icon">+</span>';
+      }
+    }
+
+    // Removes a photo from a slot
+    function removePhoto(slot) {
+      photos[slot] = null;
+      renderPhotoSlot(slot);
+      updateGenerateBtn();
+    }
+
+    // ========================================
+    // ITEM TYPE SELECTION
+    // ========================================
+
+    // Set up click handlers for type pills
+    document.querySelectorAll('.type-pill').forEach(pill => {
+      pill.addEventListener('click', () => setItemType(pill.dataset.type));
+    });
+
+    function setItemType(type) {
+      selectedType = type;
+      document.querySelectorAll('.type-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.type === type);
+      });
+    }
+
+    // ========================================
+    // CONDITION SELECTION
+    // ========================================
+
+    function setCondition(cond) {
+      selectedCondition = cond;
+      document.querySelectorAll('.condition-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.cond === cond);
+      });
+    }
+
+    // ========================================
+    // GENERATE BUTTON STATE
+    // ========================================
+
+    function updateGenerateBtn() {
+      // Enable only if at least 1 photo is added
+      const hasPhotos = photos.some(p => p !== null);
+      document.getElementById('generateBtn').disabled = !hasPhotos;
+    }
+
+    // ========================================
+    // AI GENERATION — Google Gemini
+    // ========================================
+
+    async function generateListing() {
+      const apiKey = localStorage.getItem('ebay-lister-api-key');
+      if (!apiKey) {
+        showToast('Set your API key in Settings first');
+        switchTab('tab-settings');
+        return;
+      }
+
+      // Collect photos that have data
+      const activePhotos = photos.filter(p => p !== null);
+      if (activePhotos.length === 0) {
+        showToast('Add at least one photo');
+        return;
+      }
+
+      // Show loading spinner
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+
+      try {
+        // Build the prompt for Gemini
+        const typeHint = selectedType ? `Item type hint: ${selectedType.replace('_', ' ')}` : 'Item type: unknown — determine from photos';
+
+        const prompt = `You are an eBay listing expert. Analyze these photos of an item I want to sell on eBay.
+
+Return ONLY a valid JSON object (no markdown, no code fences, no explanation) with these fields:
+- "title": eBay listing title, max 80 characters. Front-load keywords. Include brand, model, type. No fluff words.
+- "description": Detailed eBay description. Include: condition details, specifications, compatibility info, what's included, and visible dimensions/measurements. Use plain text, not HTML.
+- "category": Suggested eBay category name (e.g. "Home Appliance Parts & Accessories")
+- "condition": One of "New", "Used", or "For Parts or Not Working"
+- "brand": Brand name if identifiable, or "Unbranded"
+- "itemSpecifics": An object of key-value pairs for any identifiable specifics like model number, color, material, type, compatible brand, compatible model, etc.
+
+${typeHint}
+
+Be accurate. If you can't determine something from the photos, make your best reasonable guess and note uncertainty in the description.`;
+
+        // Build the request parts — images as inline_data, then the text prompt
+        const parts = [];
+
+        // Add each photo as an inline image part
+        for (const photo of activePhotos) {
+          // Extract base64 data from data URL (strip "data:image/jpeg;base64," prefix)
+          const base64Data = photo.split(',')[1];
+          parts.push({
+            inline_data: {
+              mime_type: 'image/jpeg',
+              data: base64Data
+            }
+          });
+        }
+
+        // Add the text prompt
+        parts.push({ text: prompt });
+
+        // Call Gemini REST API directly (no SDK needed)
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: parts }],
+              generationConfig: {
+                temperature: 0.3,  // Low temp for more consistent/factual output
+                maxOutputTokens: 1024
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData?.error?.message || `API error ${response.status}`;
+          throw new Error(errMsg);
+        }
+
+        const data = await response.json();
+
+        // Extract the text response from Gemini
+        const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!textResponse) throw new Error('No response from Gemini');
+
+        // Parse the JSON from the response (strip any markdown code fences if present)
+        const cleanJson = textResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+        const listing = JSON.parse(cleanJson);
+
+        // Populate the form fields with AI-generated data
+        populateEditor(listing);
+
+      } catch (err) {
+        console.error('Generation error:', err);
+        showToast('Error: ' + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+      }
+    }
+
+    // Fills in the editor form with AI-generated listing data
+    function populateEditor(listing) {
+      document.getElementById('listingTitle').value = listing.title || '';
+      document.getElementById('listingDesc').value = listing.description || '';
+      document.getElementById('listingCategory').value = listing.category || '';
+
+      // Set condition from AI (or keep default)
+      if (listing.condition) {
+        setCondition(listing.condition);
+      }
+
+      // Populate item specifics
+      const container = document.getElementById('specificsContainer');
+      container.innerHTML = '';
+
+      // Always add brand first if present
+      if (listing.brand) {
+        addSpecificRow('Brand', listing.brand);
+      }
+
+      // Add any other specifics from AI
+      if (listing.itemSpecifics && typeof listing.itemSpecifics === 'object') {
+        for (const [key, value] of Object.entries(listing.itemSpecifics)) {
+          if (key.toLowerCase() !== 'brand') { // Skip brand, already added
+            addSpecificRow(key, String(value));
+          }
+        }
+      }
+
+      updateCharCount();
+
+      // Show the editor section
+      document.getElementById('editorSection').style.display = 'block';
+
+      // Scroll to the editor
+      document.getElementById('editorSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ========================================
+    // CHARACTER COUNTER — eBay title max 80 chars
+    // ========================================
+
+    function updateCharCount() {
+      const title = document.getElementById('listingTitle').value;
+      const counter = document.getElementById('charCount');
+      counter.textContent = `${title.length} / 80`;
+      counter.className = title.length > 80 ? 'char-count over' : 'char-count ok';
+    }
+
+    // ========================================
+    // ITEM SPECIFICS — dynamic key/value rows
+    // ========================================
+
+    function addSpecificRow(key, value) {
+      const container = document.getElementById('specificsContainer');
+      const row = document.createElement('div');
+      row.className = 'specifics-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Name" value="${escapeHtml(key || '')}">
+        <input type="text" placeholder="Value" value="${escapeHtml(value || '')}">
+        <button class="specifics-remove" onclick="this.parentElement.remove()">×</button>
+      `;
+      container.appendChild(row);
+    }
+
+    // HTML escape helper — prevents XSS when inserting user/AI text into HTML
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ========================================
+    // COPY LISTING — formats and copies to clipboard
+    // ========================================
+
+    async function copyListing() {
+      const title = document.getElementById('listingTitle').value;
+      const desc = document.getElementById('listingDesc').value;
+      const price = document.getElementById('listingPrice').value;
+      const category = document.getElementById('listingCategory').value;
+
+      // Gather item specifics
+      const specifics = [];
+      document.querySelectorAll('.specifics-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs[0].value && inputs[1].value) {
+          specifics.push(`${inputs[0].value}: ${inputs[1].value}`);
+        }
+      });
+
+      // Build formatted text for pasting into eBay
+      let text = `TITLE: ${title}\n\n`;
+      text += `CONDITION: ${selectedCondition}\n`;
+      if (category) text += `CATEGORY: ${category}\n`;
+      if (price) text += `PRICE: $${price}\n`;
+      text += `\n--- DESCRIPTION ---\n${desc}\n`;
+
+      if (specifics.length > 0) {
+        text += `\n--- ITEM SPECIFICS ---\n`;
+        specifics.forEach(s => text += `${s}\n`);
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('Listing copied!');
+      } catch {
+        showToast('Copy failed — try again');
+      }
+    }
+
+    // Copy a single field value to clipboard (tap the label)
+    async function copyField(fieldId) {
+      const value = document.getElementById(fieldId).value;
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        showToast('Copied!');
+      } catch {
+        showToast('Copy failed');
+      }
+    }
+
+    // ========================================
+    // TOAST NOTIFICATION — brief popup message
+    // ========================================
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // ========================================
+    // DRAFTS — save/load/delete from localStorage
+    // ========================================
+
+    function getDrafts() {
+      return JSON.parse(localStorage.getItem('ebay-lister-drafts') || '[]');
+    }
+
+    function saveDrafts(drafts) {
+      localStorage.setItem('ebay-lister-drafts', JSON.stringify(drafts));
+      updateDraftBadge();
+    }
+
+    // Save current listing as a draft
+    function saveDraft() {
+      const title = document.getElementById('listingTitle').value;
+      const desc = document.getElementById('listingDesc').value;
+      const category = document.getElementById('listingCategory').value;
+      const price = document.getElementById('listingPrice').value;
+      const qty = document.getElementById('listingQty').value;
+
+      // Gather item specifics
+      const specifics = [];
+      document.querySelectorAll('.specifics-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        specifics.push({ key: inputs[0].value, value: inputs[1].value });
+      });
+
+      // Build draft object
+      const draft = {
+        id: editingDraftId || Date.now().toString(),
+        title: title || 'Untitled Listing',
+        description: desc,
+        category: category,
+        condition: selectedCondition,
+        itemType: selectedType,
+        price: price,
+        quantity: qty,
+        specifics: specifics,
+        // Store first photo as thumbnail (compressed further for storage efficiency)
+        thumbnail: photos.find(p => p !== null) || null,
+        // Store all photos
+        photos: [...photos],
+        savedAt: new Date().toISOString()
+      };
+
+      const drafts = getDrafts();
+
+      // If editing existing draft, replace it; otherwise add new
+      const existingIdx = drafts.findIndex(d => d.id === draft.id);
+      if (existingIdx >= 0) {
+        drafts[existingIdx] = draft;
+      } else {
+        drafts.unshift(draft); // Add to beginning (newest first)
+      }
+
+      saveDrafts(drafts);
+      editingDraftId = draft.id;
+      showToast('Draft saved!');
+    }
+
+    // Load a draft into the editor
+    function loadDraft(id) {
+      const drafts = getDrafts();
+      const draft = drafts.find(d => d.id === id);
+      if (!draft) return;
+
+      editingDraftId = id;
+
+      // Restore photos
+      for (let i = 0; i < 4; i++) {
+        photos[i] = draft.photos?.[i] || null;
+        renderPhotoSlot(i);
+      }
+
+      // Restore item type
+      setItemType(draft.itemType || '');
+
+      // Restore condition
+      setCondition(draft.condition || 'Used');
+
+      // Restore form fields
+      document.getElementById('listingTitle').value = draft.title || '';
+      document.getElementById('listingDesc').value = draft.description || '';
+      document.getElementById('listingCategory').value = draft.category || '';
+      document.getElementById('listingPrice').value = draft.price || '';
+      document.getElementById('listingQty').value = draft.quantity || 1;
+
+      // Restore item specifics
+      const container = document.getElementById('specificsContainer');
+      container.innerHTML = '';
+      if (draft.specifics) {
+        draft.specifics.forEach(s => addSpecificRow(s.key, s.value));
+      }
+
+      updateCharCount();
+      updateGenerateBtn();
+
+      // Show editor and switch to New tab
+      document.getElementById('editorSection').style.display = 'block';
+      switchTab('tab-new');
+    }
+
+    // Delete a draft
+    function deleteDraft(id, e) {
+      e.stopPropagation(); // Don't trigger loadDraft
+      const drafts = getDrafts().filter(d => d.id !== id);
+      saveDrafts(drafts);
+      renderDrafts();
+      showToast('Draft deleted');
+    }
+
+    // Clear all drafts (from settings)
+    function clearAllDrafts() {
+      if (!confirm('Delete all drafts? This cannot be undone.')) return;
+      saveDrafts([]);
+      showToast('All drafts deleted');
+    }
+
+    // Render the drafts list
+    function renderDrafts() {
+      const container = document.getElementById('draftsList');
+      const drafts = getDrafts();
+
+      if (drafts.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <p>No drafts yet</p>
+            <p style="font-size: 13px; margin-top: 8px;">Generate a listing and tap "Save Draft"</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = drafts.map(d => {
+        const date = new Date(d.savedAt).toLocaleDateString();
+        return `
+          <div class="draft-item" onclick="loadDraft('${d.id}')">
+            <div class="draft-thumb">
+              ${d.thumbnail
+                ? `<img src="${d.thumbnail}" alt="">`
+                : '<span class="no-photo">?</span>'
+              }
+            </div>
+            <div class="draft-info">
+              <div class="draft-title">${escapeHtml(d.title)}</div>
+              <div class="draft-meta">${date} · ${d.condition || 'Used'}</div>
+            </div>
+            <button class="draft-delete" onclick="deleteDraft('${d.id}', event)">×</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Update the draft count badge on the tab bar
+    function updateDraftBadge() {
+      const count = getDrafts().length;
+      const badge = document.getElementById('draftBadge');
+      badge.textContent = count;
+      badge.classList.toggle('hidden', count === 0);
+    }
+
+    // ========================================
+    // SETTINGS
+    // ========================================
+
+    function saveApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (!key) {
+        showToast('Enter an API key');
+        return;
+      }
+      localStorage.setItem('ebay-lister-api-key', key);
+      showToast('API key saved!');
+    }
+
+    function saveDefaults() {
+      const cond = document.getElementById('defaultCondition').value;
+      const type = document.getElementById('defaultType').value;
+      localStorage.setItem('ebay-lister-default-condition', cond);
+      localStorage.setItem('ebay-lister-default-type', type);
+      showToast('Defaults saved!');
+    }
+
+    // ========================================
+    // CLEAR / NEW LISTING
+    // ========================================
+
+    function clearListing() {
+      // Reset photos
+      for (let i = 0; i < 4; i++) {
+        photos[i] = null;
+        renderPhotoSlot(i);
+      }
+
+      // Reset form
+      document.getElementById('listingTitle').value = '';
+      document.getElementById('listingDesc').value = '';
+      document.getElementById('listingCategory').value = '';
+      document.getElementById('listingPrice').value = '';
+      document.getElementById('listingQty').value = '1';
+      document.getElementById('specificsContainer').innerHTML = '';
+
+      // Reset state
+      editingDraftId = null;
+
+      // Apply defaults
+      const defaultCond = localStorage.getItem('ebay-lister-default-condition') || 'Used';
+      setCondition(defaultCond);
+
+      const defaultType = localStorage.getItem('ebay-lister-default-type') || '';
+      setItemType(defaultType);
+
+      updateCharCount();
+      updateGenerateBtn();
+
+      // Hide editor
+      document.getElementById('editorSection').style.display = 'none';
+
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ========================================
+    // SERVICE WORKER REGISTRATION
+    // ========================================
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('SW registered'))
+        .catch(err => console.log('SW registration failed:', err));
+    }
+  </script>
+</body>
+</html>
