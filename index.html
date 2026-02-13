@@ -1082,7 +1082,11 @@
           Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. Stored locally on this device only.
         </p>
         <input type="text" id="apiKeyInput" placeholder="Paste your Gemini API key">
-        <button class="btn btn-primary btn-small" onclick="saveApiKey()" style="width: auto;">Save Key</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-small" onclick="saveApiKey()" style="width: auto;">Save Key</button>
+          <button class="btn btn-secondary btn-small" onclick="testApiKey()" style="width: auto;">Test Connection</button>
+        </div>
+        <pre id="apiTestResult" style="display:none; margin-top: 12px; padding: 12px; background: var(--bg-input); border-radius: 8px; font-size: 11px; color: var(--text); overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto;"></pre>
       </div>
 
       <div class="card">
@@ -1775,6 +1779,73 @@ Be accurate. If you can't determine something from the photos, make your best re
       if (!key) { showToast('Enter an API key'); return; }
       localStorage.setItem('ebay-lister-api-key', key);
       showToast('API key saved!');
+    }
+
+    // Test API key — lists available models to diagnose issues
+    async function testApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim() || localStorage.getItem('ebay-lister-api-key');
+      const resultEl = document.getElementById('apiTestResult');
+      resultEl.style.display = 'block';
+      resultEl.textContent = 'Testing...';
+
+      if (!key) {
+        resultEl.textContent = 'No API key entered.';
+        return;
+      }
+
+      try {
+        // First: list available models
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`
+        );
+        const data = await res.json();
+
+        if (data.error) {
+          resultEl.textContent = 'API Error: ' + data.error.message;
+          return;
+        }
+
+        // Filter to models that support generateContent
+        const genModels = (data.models || [])
+          .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+          .map(m => m.name.replace('models/', ''))
+          .filter(m => m.includes('flash') || m.includes('pro'));
+
+        let output = 'Available models:\n';
+        output += genModels.length > 0
+          ? genModels.join('\n')
+          : '(none with generateContent support)';
+
+        // Second: try a simple text-only call to check quota
+        output += '\n\nQuota test (gemini-2.0-flash-lite):\n';
+        try {
+          const testRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${key}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: 'Say "hello" and nothing else.' }] }],
+                generationConfig: { maxOutputTokens: 10 }
+              })
+            }
+          );
+          const testData = await testRes.json();
+          if (testData.error) {
+            output += 'FAILED: ' + testData.error.message;
+          } else {
+            const reply = testData.candidates?.[0]?.content?.parts?.[0]?.text;
+            output += 'SUCCESS: ' + (reply || '(empty response)');
+          }
+        } catch (e) {
+          output += 'FAILED: ' + e.message;
+        }
+
+        resultEl.textContent = output;
+
+      } catch (err) {
+        resultEl.textContent = 'Network error: ' + err.message;
+      }
     }
 
     function saveDefaults() {
