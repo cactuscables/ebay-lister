@@ -1424,7 +1424,11 @@ Be accurate. If you can't determine something from the photos, make your best re
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts }],
-              generationConfig: { temperature: 0.3, maxOutputTokens: 1024 }
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 1024,
+                responseMimeType: 'application/json'
+              }
             })
           }
         );
@@ -1438,7 +1442,14 @@ Be accurate. If you can't determine something from the photos, make your best re
         const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!textResponse) throw new Error('No response from Gemini');
 
-        const cleanJson = textResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+        // Extract JSON — strip code fences, find the { } object
+        let cleanJson = textResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+        // If response has text before/after the JSON, extract just the object
+        const jsonStart = cleanJson.indexOf('{');
+        const jsonEnd = cleanJson.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          cleanJson = cleanJson.slice(jsonStart, jsonEnd + 1);
+        }
         const listing = JSON.parse(cleanJson);
 
         populateEditor(listing);
